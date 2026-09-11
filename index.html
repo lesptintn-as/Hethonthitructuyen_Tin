@@ -45,8 +45,8 @@
         .btn-secondary { background-color: #6c757d; }
 
         .container {
-            padding: 20px;
-            max-width: 1200px;
+            padding: 15px;
+            max-width: 1400px;
             margin: auto;
         }
 
@@ -58,28 +58,33 @@
             margin-bottom: 20px;
         }
 
-        /* Giao diện làm bài 2 cột */
+        /* Giao diện làm bài 2 cột - Tối ưu tỷ lệ cho Học sinh */
         .exam-container {
             display: flex;
-            gap: 20px;
-            height: calc(100vh - 120px);
+            gap: 15px;
+            height: calc(100vh - 90px);
         }
 
+        /* Khung chọn đáp án (Bên trái) - Thu nhỏ lại */
         .left-panel {
-            flex: 1;
+            flex: 1; 
+            max-width: 380px; /* Tiết kiệm diện tích */
             background: white;
             padding: 15px;
             border-radius: 8px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
+        /* Khung hiển thị Đề PDF (Bên phải) - Cho to hơn hẳn */
         .right-panel {
-            flex: 1;
+            flex: 2.5; /* Mở rộng tối đa cho đề thi */
             background: #fff;
             border-radius: 8px;
             overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
         iframe {
@@ -126,24 +131,51 @@
 
         th { background-color: var(--light-bg); }
 
-        /* Modal popup */
+        /* Modal popup Xem Đề (Giáo viên) - Mở rộng tối đa */
         .modal {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.6);
             justify-content: center;
             align-items: center;
+            z-index: 1000;
         }
 
         .modal-content {
             background: white;
             padding: 20px;
             border-radius: 8px;
-            width: 80%;
-            max-width: 900px;
-            max-height: 90vh;
-            overflow-y: auto;
+            width: 95%;
+            height: 92vh;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        /* Chế độ Full Screen cho Modal */
+        .modal-content.fullscreen {
+            width: 100vw !important;
+            height: 100vh !important;
+            border-radius: 0 !important;
+            padding: 10px !important;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .modal-body {
+            display: flex;
+            gap: 15px;
+            flex: 1;
+            overflow: hidden;
         }
 
         .form-group {
@@ -208,14 +240,14 @@
             <button class="btn btn-success" onclick="startExam()">BẮT ĐẦU LÀM BÀI</button>
         </div>
 
-        <!-- MÀN HÌNH LÀM BÀI CỦA HỌC SINH -->
+        <!-- MÀN HÌNH LÀM BÀI CỦA HỌC SINH (TỐI ƯU DIỆN TÍCH XEM ĐỀ) -->
         <div id="view-student-exam" class="hidden">
             <div class="exam-container">
                 <div class="left-panel">
-                    <div class="timer" id="timer-display">Thời gian còn lại: --:--</div>
-                    <h3>PHIẾU TRẢ LỜI</h3>
+                    <div class="timer" id="timer-display">Thời gian: --:--</div>
+                    <h3 style="margin-top:0;">PHIẾU TRẢ LỜI</h3>
                     <form id="answer-form"></form>
-                    <button class="btn btn-danger" style="margin-top: 20px; width: 100%;" onclick="submitExam()">NỘP BÀI</button>
+                    <button class="btn btn-danger" style="margin-top: 20px; width: 100%; padding: 12px;" onclick="submitExam()">NỘP BÀI</button>
                 </div>
                 <div class="right-panel">
                     <iframe id="pdf-viewer"></iframe>
@@ -300,14 +332,19 @@
         </div>
     </div>
 
-    <!-- MODAL XEM ĐỀ THI (GIÁO VIÊN) -->
+    <!-- MODAL XEM LẠI ĐỀ THI GIÁO VIÊN (RỘNG RÃI & CÓ NÚT MỞ RỘNG) -->
     <div id="modal-view-exam" class="modal">
-        <div class="modal-content">
-            <span style="float: right; cursor: pointer; font-weight: bold;" onclick="closeModal()">&times; Đóng</span>
-            <h3>XEM LẠI ĐỀ THI</h3>
-            <div style="display: flex; gap: 20px; height: 500px;">
-                <div style="flex: 1; overflow-y: auto;" id="modal-answers"></div>
-                <div style="flex: 1;"><iframe id="modal-pdf-viewer"></iframe></div>
+        <div class="modal-content" id="modal-content-box">
+            <div class="modal-header">
+                <h3 style="margin:0;" id="modal-title">XEM LẠI ĐỀ THI</h3>
+                <div>
+                    <button class="btn btn-primary" onclick="toggleModalFullscreen()" id="btn-toggle-fs">⤢ Mở Rộng</button>
+                    <button class="btn btn-danger" onclick="closeModal()">✕ Đóng</button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div style="flex: 1; max-width: 320px; overflow-y: auto; padding-right: 10px; border-right: 1px solid #ddd;" id="modal-answers"></div>
+                <div style="flex: 3; height: 100%;"><iframe id="modal-pdf-viewer"></iframe></div>
             </div>
         </div>
     </div>
@@ -320,7 +357,6 @@
         let timerInterval = null;
         let studentInfo = {};
 
-        // Khởi tạo giao diện
         function goHome() {
             clearInterval(timerInterval);
             document.getElementById('view-home').classList.remove('hidden');
@@ -333,7 +369,6 @@
             `;
         }
 
-        // Chế độ Học sinh
         function showStudentView() {
             document.getElementById('view-home').classList.add('hidden');
             document.getElementById('view-teacher').classList.add('hidden');
@@ -343,7 +378,6 @@
                 <button class="btn btn-secondary" onclick="goHome()">TRANG CHỦ</button>
             `;
 
-            // Nạp danh sách đề thi
             const select = document.getElementById('student-exam-select');
             select.innerHTML = '<option value="">-- Chọn đề thi --</option>';
             Object.keys(exams).forEach(id => {
@@ -351,7 +385,6 @@
             });
         }
 
-        // Bắt đầu làm bài
         function startExam() {
             const name = document.getElementById('student-name').value.trim();
             const className = document.getElementById('student-class').value.trim();
@@ -369,13 +402,8 @@
             document.getElementById('view-student-init').classList.add('hidden');
             document.getElementById('view-student-exam').classList.remove('hidden');
 
-            // Hiển thị đề PDF
             document.getElementById('pdf-viewer').src = currentExam.pdfData;
-
-            // Dựng phiếu trả lời
             renderAnswerSheet();
-
-            // Khởi chạy đồng hồ
             startTimer(currentExam.duration * 60);
         }
 
@@ -383,7 +411,6 @@
             const form = document.getElementById('answer-form');
             let html = '';
 
-            // Phần I: Trắc nghiệm
             if (currentExam.mcConfig && currentExam.mcConfig.length > 0) {
                 html += '<h4>Phần I: Trắc nghiệm</h4>';
                 currentExam.mcConfig.forEach((q, idx) => {
@@ -391,7 +418,7 @@
                         <div class="question-item">
                             <label><b>Câu ${idx + 1}:</b></label><br>
                             ${['A', 'B', 'C', 'D'].map(opt => `
-                                <label style="margin-right: 15px;">
+                                <label style="margin-right: 10px;">
                                     <input type="radio" name="mc_${idx}" value="${opt}"> ${opt}
                                 </label>
                             `).join('')}
@@ -400,9 +427,8 @@
                 });
             }
 
-            // Phần II: Đúng / Sai
             if (currentExam.tfConfig && currentExam.tfConfig.length > 0) {
-                html += '<h4>Phần II: Câu hỏi Đúng/Sai</h4>';
+                html += '<h4>Phần II: Cấu hỏi Đúng/Sai</h4>';
                 currentExam.tfConfig.forEach((q, idx) => {
                     html += `
                         <div class="question-item">
@@ -431,7 +457,7 @@
             timerInterval = setInterval(() => {
                 const mins = Math.floor(timeLeft / 60);
                 const secs = timeLeft % 60;
-                timerDisplay.innerText = `Thời gian còn lại: ${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                timerDisplay.innerText = `Thời gian: ${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
 
                 if (timeLeft <= 0) {
                     clearInterval(timerInterval);
@@ -442,19 +468,15 @@
             }, 1000);
         }
 
-        // Cảnh báo & Nộp bài
         function submitExam(force = false) {
             if (!force) {
-                // Kiểm tra câu bỏ trống
                 let unanswered = [];
 
-                // Quét trắc nghiệm
                 currentExam.mcConfig.forEach((q, idx) => {
                     const selected = document.querySelector(`input[name="mc_${idx}"]:checked`);
                     if (!selected) unanswered.push(`Câu ${idx + 1} (Phần I)`);
                 });
 
-                // Quét Đúng/Sai
                 currentExam.tfConfig.forEach((q, idx) => {
                     ['a', 'b', 'c', 'd'].forEach(sub => {
                         const selected = document.querySelector(`input[name="tf_${idx}_${sub}"]:checked`);
@@ -470,10 +492,8 @@
 
             clearInterval(timerInterval);
 
-            // Tính điểm
             let totalScore = 0;
 
-            // Tính điểm Trắc nghiệm
             currentExam.mcConfig.forEach((q, idx) => {
                 const selected = document.querySelector(`input[name="mc_${idx}"]:checked`);
                 if (selected && selected.value === q.ans) {
@@ -481,7 +501,6 @@
                 }
             });
 
-            // Tính điểm Đúng/Sai
             currentExam.tfConfig.forEach((q, idx) => {
                 let correctCount = 0;
                 ['a', 'b', 'c', 'd'].forEach(sub => {
@@ -496,7 +515,6 @@
                 else if (correctCount === 4) totalScore += parseFloat(q.scores.s4);
             });
 
-            // Lưu kết quả
             const resultRecord = {
                 name: studentInfo.name,
                 className: studentInfo.className,
@@ -513,7 +531,6 @@
             goHome();
         }
 
-        // Đăng nhập Giáo viên
         function showTeacherLogin() {
             const pass = prompt('Vui lòng nhập mật khẩu Quản lý Giáo viên:');
             if (pass === '123456A@2') {
@@ -527,7 +544,6 @@
             }
         }
 
-        // Thiết lập đáp án trong giao diện Giáo viên
         function generateAnswerConfig() {
             const mcCount = parseInt(document.getElementById('mc-count').value) || 0;
             const tfCount = parseInt(document.getElementById('tf-count').value) || 0;
@@ -577,7 +593,6 @@
             document.getElementById('save-exam-btn').classList.remove('hidden');
         }
 
-        // Lưu đề thi
         function saveExam() {
             const id = document.getElementById('exam-id').value.trim();
             const title = document.getElementById('exam-title').value.trim();
@@ -593,7 +608,6 @@
             reader.onload = function(e) {
                 const pdfData = e.target.result;
                 
-                // Thu thập cấu hình câu hỏi
                 const mcCount = parseInt(document.getElementById('mc-count').value) || 0;
                 const tfCount = parseInt(document.getElementById('tf-count').value) || 0;
 
@@ -627,7 +641,7 @@
                 localStorage.setItem('EXAMS', JSON.stringify(exams));
 
                 alert('Lưu đề thi thành công!');
-                location.reload(); // Làm mới lại trang để tạo đề tiếp theo
+                location.reload();
             };
 
             reader.readAsDataURL(pdfFile);
@@ -665,19 +679,20 @@
         function viewExam(id) {
             const exam = exams[id];
             document.getElementById('modal-pdf-viewer').src = exam.pdfData;
+            document.getElementById('modal-title').innerText = `XEM LẠI ĐỀ THI - MÃ ĐỀ: ${exam.id}`;
             
             let html = `<h4>Đáp án mã đề: ${exam.id}</h4>`;
-            if (exam.mcConfig.length > 0) {
+            if (exam.mcConfig && exam.mcConfig.length > 0) {
                 html += '<b>Phần I (Trắc nghiệm):</b><br>';
                 exam.mcConfig.forEach((q, idx) => {
-                    html += `Câu ${idx + 1}: ${q.ans} (${q.score}đ)<br>`;
+                    html += `Câu ${idx + 1}: <b>${q.ans}</b> (${q.score}đ)<br>`;
                 });
             }
 
-            if (exam.tfConfig.length > 0) {
+            if (exam.tfConfig && exam.tfConfig.length > 0) {
                 html += '<br><b>Phần II (Đúng/Sai):</b><br>';
                 exam.tfConfig.forEach((q, idx) => {
-                    html += `Câu ${idx + 1}: a-${q.ans.a}, b-${q.ans.b}, c-${q.ans.c}, d-${q.ans.d}<br>`;
+                    html += `Câu ${idx + 1}: a-<b>${q.ans.a}</b>, b-<b>${q.ans.b}</b>, c-<b>${q.ans.c}</b>, d-<b>${q.ans.d}</b><br>`;
                 });
             }
 
@@ -685,8 +700,24 @@
             document.getElementById('modal-view-exam').style.display = 'flex';
         }
 
+        /* Tính năng phóng to/thu nhỏ khung xem đề */
+        function toggleModalFullscreen() {
+            const modalContent = document.getElementById('modal-content-box');
+            const btn = document.getElementById('btn-toggle-fs');
+            
+            if (modalContent.classList.contains('fullscreen')) {
+                modalContent.classList.remove('fullscreen');
+                btn.innerText = '⤢ Mở Rộng';
+            } else {
+                modalContent.classList.add('fullscreen');
+                btn.innerText = '⤡ Thu Nhỏ';
+            }
+        }
+
         function closeModal() {
             document.getElementById('modal-view-exam').style.display = 'none';
+            document.getElementById('modal-content-box').classList.remove('fullscreen');
+            document.getElementById('btn-toggle-fs').innerText = '⤢ Mở Rộng';
         }
 
         function loadReportSelect() {
@@ -718,7 +749,6 @@
             });
         }
 
-        // Xuất file Excel / CSV bao gồm thông tin Lớp và Ngày sinh
         function exportToCSV() {
             const selectedExamId = document.getElementById('report-exam-select').value;
             if (!selectedExamId) {
@@ -732,7 +762,6 @@
                 return;
             }
 
-            // Tạo nội dung CSV (UTF-8 BOM)
             let csvContent = "\uFEFF"; 
             csvContent += "Họ và Tên,Lớp,Ngày Sinh,Mã Đề,Thời Gian Nộp,Điểm Số\n";
 

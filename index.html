@@ -3,98 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống Kiểm Tra Trực Tuyến & Quản Lý</title>
+    <title>Hệ Thống Thi Trực Tuyến Chuyên Nghiệp</title>
 
-    <!-- Thêm thư viện Firebase SDK -->
+    <!-- Thư viện Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: #f4f6f9; padding: 20px; }
-        .container { max-width: 1200px; margin: 0 auto; background: #fff; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); padding: 20px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
+        body { background: #eef2f5; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: #fff; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 25px; }
         .hidden { display: none !important; }
-        .btn { padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px; margin-right: 5px; transition: 0.2s; }
+        .btn { padding: 9px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; margin-right: 8px; transition: 0.2s; }
         .btn-primary { background: #2563eb; color: #fff; }
         .btn-success { background: #16a34a; color: #fff; }
         .btn-danger { background: #dc2626; color: #fff; }
         .btn-warning { background: #d97706; color: #fff; }
         .btn:hover { opacity: 0.9; }
-        .btn:disabled { background: #9ca3af; cursor: not-allowed; }
         
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e5e7eb; padding-bottom: 15px; margin-bottom: 20px; }
         .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
-        .grid-2 { display: grid; grid-template-columns: 350px 1fr; gap: 20px; height: calc(100vh - 120px); }
+        .grid-2 { display: grid; grid-template-columns: 380px 1fr; gap: 20px; height: calc(100vh - 120px); }
         
         .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #374151; }
-        .form-group input, .form-group select { width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; color: #374151; }
+        .form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; }
         
-        .pdf-viewer { width: 100%; height: 100%; border: 1px solid #e5e7eb; border-radius: 6px; }
-        .answer-sheet { overflow-y: auto; padding-right: 10px; border-right: 1px solid #e5e7eb; }
-        .question-item { background: #f9fafb; border: 1px solid #e5e7eb; padding: 10px; margin-bottom: 10px; border-radius: 6px; }
-        .opt-group { display: flex; gap: 15px; margin-top: 5px; }
+        .pdf-viewer { width: 100%; height: 100%; border: 1px solid #e5e7eb; border-radius: 8px; }
+        .answer-sheet { overflow-y: auto; padding-right: 12px; border-right: 1px solid #e5e7eb; }
+        .question-item { background: #f9fafb; border: 1px solid #e5e7eb; padding: 12px; margin-bottom: 12px; border-radius: 6px; }
+        .opt-group { display: flex; gap: 15px; margin-top: 8px; }
         
-        .timer-box { background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; padding: 10px; text-align: center; font-size: 20px; font-weight: bold; border-radius: 6px; margin-bottom: 15px; }
+        .timer-box { background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; padding: 12px; text-align: center; font-size: 22px; font-weight: bold; border-radius: 8px; margin-bottom: 15px; position: sticky; top: 0; z-index: 10; }
         
-        /* Table Style */
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         table, th, td { border: 1px solid #e5e7eb; }
-        th, td { padding: 10px; text-align: left; }
-        th { background: #f3f4f6; }
+        th, td { padding: 12px; text-align: left; }
+        th { background: #f8fafc; color: #334155; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <h2>HỆ THỐNG THI TRỰC TUYẾN</h2>
-        <div id="role-selector">
+        <h2>HỆ THỐNG KIỂM TRA TRỰC TUYẾN</h2>
+        <div>
             <button class="btn btn-primary" onclick="switchRole('teacher')">GIÁO VIÊN</button>
             <button class="btn btn-success" onclick="switchRole('student')">HỌC SINH</button>
         </div>
     </div>
 
-    <!-- Màn hình xác thực Giáo viên -->
+    <!-- ĐĂNG NHẬP GIÁO VIÊN -->
     <div id="teacher-auth" class="hidden" style="max-width: 400px; margin: 50px auto;">
-        <h3>Đăng nhập Giáo viên</h3>
-        <div class="form-group" style="margin-top: 15px;">
-            <label>Mật khẩu:</label>
+        <h3 style="margin-bottom: 15px;">Đăng Nhập Giáo Viên</h3>
+        <div class="form-group">
+            <label>Mật khẩu quản trị:</label>
             <input type="password" id="teacher-pass" placeholder="Nhập mật khẩu...">
         </div>
-        <button class="btn btn-primary" style="width: 100%;" onclick="verifyTeacher()">Vào Bảng Điều Khiển</button>
+        <button class="btn btn-primary" style="width: 100%; padding: 10px;" onclick="verifyTeacher()">Đăng Nhập</button>
     </div>
 
-    <!-- Màn hình Giáo viên -->
+    <!-- PANEL GIÁO VIÊN -->
     <div id="teacher-panel" class="hidden">
         <div class="nav-tabs">
-            <button class="btn btn-primary" onclick="showTeacherTab('create')">Tạo Bài Kiểm Tra</button>
+            <button class="btn btn-primary" onclick="showTeacherTab('create')">Tạo & Setup Đáp Án</button>
             <button class="btn btn-warning" onclick="showTeacherTab('manage')">Quản Lý Đề Thi</button>
-            <button class="btn btn-success" onclick="showTeacherTab('results')">Thống Kê Điểm & Xuất Excel</button>
+            <button class="btn btn-success" onclick="showTeacherTab('results')">Kết Quả & Xuất Excel</button>
         </div>
 
         <!-- Tab 1: Tạo Đề -->
         <div id="tab-create">
-            <h3>Tạo Đề Thi Mới</h3>
-            <form id="create-exam-form" onsubmit="saveExam(event)">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <h3>Cấu Hình Đề Thi & Đáp Án Mới</h3>
+            <form onsubmit="saveExam(event)">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
                     <div class="form-group">
-                        <label>Mã bài thi:</label>
+                        <label>Mã bài thi (Viết liền không dấu):</label>
                         <input type="text" id="exam-id" required placeholder="VD: DE01">
                     </div>
                     <div class="form-group">
                         <label>Tên bài thi:</label>
-                        <input type="text" id="exam-title" required placeholder="VD: Kiểm tra HK2 Tin học">
+                        <input type="text" id="exam-title" required placeholder="VD: Kiểm tra Giữa Kỳ 1 Tin Học">
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px;">
                     <div class="form-group">
-                        <label>File đề PDF:</label>
-                        <input type="file" id="exam-pdf" accept="application/pdf" required>
+                        <label>Đường dẫn File PDF Đề thi (URL hoặc tên file):</label>
+                        <input type="text" id="exam-pdf-url" required placeholder="VD: de-thi/de01.pdf hoặc https://...">
                     </div>
                     <div class="form-group">
-                        <label>Thời gian làm bài (phút):</label>
+                        <label>Thời gian làm bài (Phút):</label>
                         <input type="number" id="exam-time" value="45" required min="1">
                     </div>
                 </div>
@@ -110,8 +108,8 @@
                     </div>
                 </div>
 
-                <div id="score-config" style="background: #f0fdf4; padding: 15px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #bbf7d0;">
-                    <h4 style="margin-bottom: 10px;">Cấu hình Điểm phần Đúng/Sai</h4>
+                <div style="background: #f0fdf4; padding: 15px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #bbf7d0;">
+                    <h4 style="margin-bottom: 10px;">Biểu điểm Phần II (Đúng/Sai)</h4>
                     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
                         <div><label>Đúng 1 ý:</label><input type="number" step="0.05" id="score-tf-1" value="0.1"></div>
                         <div><label>Đúng 2 ý:</label><input type="number" step="0.05" id="score-tf-2" value="0.25"></div>
@@ -120,23 +118,22 @@
                     </div>
                 </div>
 
-                <button type="button" class="btn btn-primary" onclick="generateAnswerSetup()" style="margin-bottom: 15px;">Thiết lập Đáp án & Điểm</button>
                 <div id="answer-setup-container"></div>
 
-                <button type="submit" id="btn-save-exam" class="btn btn-success" style="width: 100%; margin-top: 20px; padding: 12px;">LƯU ĐỀ THI LÊN ĐÁM MÂY</button>
+                <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 20px; padding: 12px; font-size: 16px;">LƯU ĐÁP ÁN LÊN ĐÁM MÂY</button>
             </form>
         </div>
 
         <!-- Tab 2: Quản lý Đề Thi -->
         <div id="tab-manage" class="hidden">
-            <h3>Quản Lý Mã Đề Thi Trực Tuyến</h3>
+            <h3>Danh Sách Đề Thi Trên Đám Mây</h3>
             <table>
                 <thead>
                     <tr>
                         <th>Mã Đề</th>
                         <th>Tên Bài Kiểm Tra</th>
                         <th>Thời Gian</th>
-                        <th>Số Câu (TN / ĐS)</th>
+                        <th>Cấu Trúc</th>
                         <th>Thao Tác</th>
                     </tr>
                 </thead>
@@ -146,9 +143,9 @@
 
         <!-- Tab 3: Thống kê & Xuất Excel -->
         <div id="tab-results" class="hidden">
-            <h3>Thống Kê Điểm Học Sinh</h3>
+            <h3>Thống Kê Điểm Thi Học Sinh</h3>
             <div style="display: flex; gap: 15px; margin: 15px 0;">
-                <select id="filter-exam-id" style="width: 300px; padding: 8px;" onchange="loadStudentResults()">
+                <select id="filter-exam-id" style="width: 300px;" onchange="loadStudentResults()">
                     <option value="">-- Chọn bài kiểm tra --</option>
                 </select>
                 <button class="btn btn-success" onclick="exportToExcel()">Xuất File Excel (.csv)</button>
@@ -159,8 +156,10 @@
                     <tr>
                         <th>STT</th>
                         <th>Họ và Tên</th>
+                        <th>Lớp</th>
+                        <th>Ngày Sinh</th>
                         <th>Mã Đề</th>
-                        <th>Thời Gian Nộp Bài</th>
+                        <th>Thời Gian Nộp</th>
                         <th>Điểm Số</th>
                     </tr>
                 </thead>
@@ -169,32 +168,40 @@
         </div>
     </div>
 
-    <!-- Màn hình Học sinh Chọn Đề -->
+    <!-- MÀN HÌNH HỌC SINH VÀO THI -->
     <div id="student-portal">
-        <div style="max-width: 500px; margin: 40px auto; background: #fafafa; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
-            <h3 style="margin-bottom: 15px;">Vào Làm Bài Thi</h3>
+        <div style="max-width: 480px; margin: 40px auto; background: #fff; padding: 25px; border-radius: 8px; border: 1px solid #e5e7eb; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+            <h3 style="margin-bottom: 20px; text-align: center; color: #1e293b;">Thông Tin Học Sinh Làm Bài</h3>
             <div class="form-group">
-                <label>Họ và Tên Học sinh:</label>
-                <input type="text" id="student-name" placeholder="Nhập họ tên...">
+                <label>Họ và Tên Học Sinh:</label>
+                <input type="text" id="student-name" placeholder="Ví dụ: Nguyễn Văn An" required>
+            </div>
+            <div class="form-group">
+                <label>Lớp:</label>
+                <input type="text" id="student-class" placeholder="Ví dụ: 12A1" required>
+            </div>
+            <div class="form-group">
+                <label>Ngày Sinh:</label>
+                <input type="date" id="student-dob" required>
             </div>
             <div class="form-group">
                 <label>Chọn Bài Kiểm Tra:</label>
                 <select id="student-exam-select">
-                    <option value="">-- Đang tải đề thi... --</option>
+                    <option value="">-- Đang tải danh sách đề... --</option>
                 </select>
             </div>
-            <button class="btn btn-success" style="width: 100%; padding: 12px;" onclick="startExam()">BẮT ĐẦU LÀM BÀI</button>
+            <button class="btn btn-success" style="width: 100%; padding: 12px; font-size: 16px; margin-top: 10px;" onclick="startExam()">BẮT ĐẦU LÀM BÀI</button>
         </div>
     </div>
 
-    <!-- Màn hình Học sinh Làm bài -->
+    <!-- GIAO DIỆN LÀM BÀI CỦA HỌC SINH -->
     <div id="exam-workspace" class="hidden">
         <div class="grid-2">
             <div class="answer-sheet">
                 <div class="timer-box" id="timer">00:00</div>
                 <form id="student-answer-form">
                     <div id="student-questions"></div>
-                    <button type="button" class="btn btn-danger" style="width: 100%; padding: 12px; margin-top: 15px;" onclick="submitExam()">NỘP BÀI</button>
+                    <button type="button" class="btn btn-danger" style="width: 100%; padding: 14px; margin-top: 15px; font-size: 16px;" onclick="submitExam()">NỘP BÀI</button>
                 </form>
             </div>
             <div>
@@ -205,9 +212,7 @@
 </div>
 
 <script>
-    // ------------------------------------------------------------------
-    // CẤU HÌNH FIREBASE ĐÁM MÂY
-    // ------------------------------------------------------------------
+    // Firebase Config của bạn
     const firebaseConfig = {
       apiKey: "AIzaSyA_wlm4Y5sf7kYUKsBjz0WZZae9tdYRyhU",
       authDomain: "hethongthionline-b8102.firebaseapp.com",
@@ -225,9 +230,9 @@
     let results = [];
     let currentExam = null;
     let timerInterval = null;
-    let currentStudentName = "";
+    let currentStudent = {};
 
-    // Đồng bộ dữ liệu Thời gian thực từ Firebase
+    // Tải dữ liệu Đám Mây tự động
     db.ref('EXAMS').on('value', (snapshot) => {
         exams = snapshot.val() || {};
         loadStudentExamList();
@@ -251,7 +256,6 @@
             document.getElementById('teacher-auth').classList.remove('hidden');
         } else {
             document.getElementById('student-portal').classList.remove('hidden');
-            loadStudentExamList();
         }
     }
 
@@ -262,7 +266,7 @@
             document.getElementById('teacher-panel').classList.remove('hidden');
             generateAnswerSetup();
         } else {
-            alert('Mật khẩu Giáo viên không chính xác!');
+            alert('Mật khẩu không đúng!');
         }
     }
 
@@ -272,14 +276,8 @@
         document.getElementById('tab-results').classList.add('hidden');
 
         if (tab === 'create') document.getElementById('tab-create').classList.remove('hidden');
-        if (tab === 'manage') {
-            document.getElementById('tab-manage').classList.remove('hidden');
-            loadExamManagementTable();
-        }
-        if (tab === 'results') {
-            document.getElementById('tab-results').classList.remove('hidden');
-            loadResultsExamFilter();
-        }
+        if (tab === 'manage') document.getElementById('tab-manage').classList.remove('hidden');
+        if (tab === 'results') document.getElementById('tab-results').classList.remove('hidden');
     }
 
     function generateAnswerSetup() {
@@ -288,10 +286,10 @@
         const container = document.getElementById('answer-setup-container');
         container.innerHTML = '';
 
-        let html = '<h4>Cấu hình đáp án & điểm:</h4>';
+        let html = '<h4 style="margin: 15px 0 10px 0;">Cấu hình Đáp án chuẩn:</h4>';
         
         if (numMc > 0) {
-            html += '<h5 style="margin: 10px 0;">Phần I: Trắc nghiệm</h5>';
+            html += '<h5>Phần I: Trắc nghiệm (Chọn 1 đáp án)</h5>';
             for (let i = 1; i <= numMc; i++) {
                 html += `
                 <div class="question-item" style="display: flex; gap: 15px; align-items: center;">
@@ -308,7 +306,7 @@
         }
 
         if (numTf > 0) {
-            html += '<h5 style="margin: 10px 0;">Phần II: Đúng/Sai</h5>';
+            html += '<h5 style="margin-top: 15px;">Phần II: Câu hỏi Đúng/Sai</h5>';
             for (let i = 1; i <= numTf; i++) {
                 html += `
                 <div class="question-item">
@@ -332,79 +330,53 @@
 
     function saveExam(e) {
         e.preventDefault();
-
         const examId = document.getElementById('exam-id').value.trim();
-        const examTitle = document.getElementById('exam-title').value.trim();
-        const fileInput = document.getElementById('exam-pdf');
-        const file = fileInput.files[0];
+        const pdfUrl = document.getElementById('exam-pdf-url').value.trim();
 
-        if (!examId) { alert("Vui lòng nhập Mã bài thi!"); return; }
-        if (!examTitle) { alert("Vui lòng nhập Tên bài thi!"); return; }
-        if (!file) { alert("Vui lòng chọn file PDF đề thi!"); return; }
+        const numMc = parseInt(document.getElementById('num-mc').value) || 0;
+        const numTf = parseInt(document.getElementById('num-tf').value) || 0;
 
-        const btnSave = document.getElementById('btn-save-exam');
-        btnSave.disabled = true;
-        btnSave.textContent = "ĐANG TẢI ĐỀ LÊN ĐÁM MÂY...";
-
-        const reader = new FileReader();
-        reader.onload = function(evt) {
-            const pdfBase64 = evt.target.result;
-
-            const numMc = parseInt(document.getElementById('num-mc').value) || 0;
-            const numTf = parseInt(document.getElementById('num-tf').value) || 0;
-
-            const mcData = [];
-            for (let i = 1; i <= numMc; i++) {
-                const ansElem = document.getElementById(`ans-mc-${i}`);
-                const scoreElem = document.getElementById(`score-mc-${i}`);
-                mcData.push({
-                    ans: ansElem ? ansElem.value : 'A',
-                    score: scoreElem ? parseFloat(scoreElem.value) || 0 : 0.25
-                });
-            }
-
-            const tfData = [];
-            for (let i = 1; i <= numTf; i++) {
-                tfData.push({
-                    a: document.getElementById(`ans-tf-${i}-a`) ? document.getElementById(`ans-tf-${i}-a`).value : 'Đ',
-                    b: document.getElementById(`ans-tf-${i}-b`) ? document.getElementById(`ans-tf-${i}-b`).value : 'Đ',
-                    c: document.getElementById(`ans-tf-${i}-c`) ? document.getElementById(`ans-tf-${i}-c`).value : 'S',
-                    d: document.getElementById(`ans-tf-${i}-d`) ? document.getElementById(`ans-tf-${i}-d`).value : 'S'
-                });
-            }
-
-            const examData = {
-                id: examId,
-                title: examTitle,
-                time: parseInt(document.getElementById('exam-time').value) || 45,
-                pdf: pdfBase64,
-                mc: mcData,
-                tf: tfData,
-                tfScores: {
-                    1: parseFloat(document.getElementById('score-tf-1').value) || 0.1,
-                    2: parseFloat(document.getElementById('score-tf-2').value) || 0.25,
-                    3: parseFloat(document.getElementById('score-tf-3').value) || 0.5,
-                    4: parseFloat(document.getElementById('score-tf-4').value) || 1.0
-                }
-            };
-
-            // Lưu trực tiếp lên Đám Mây Firebase
-            db.ref(`EXAMS/${examId}`).set(examData, (err) => {
-                btnSave.disabled = false;
-                btnSave.textContent = "LƯU ĐỀ THI LÊN ĐÁM MÂY";
-
-                if (err) {
-                    alert("Lỗi khi lưu lên Firebase: " + err.message);
-                } else {
-                    alert("LƯU ĐỀ THI THÀNH CÔNG LÊN ĐÁM MÂY!");
-                    document.getElementById('create-exam-form').reset();
-                    generateAnswerSetup();
-                    showTeacherTab('manage'); // Chuyển sang tab quản lý đề
-                }
+        const mcData = [];
+        for (let i = 1; i <= numMc; i++) {
+            mcData.push({
+                ans: document.getElementById(`ans-mc-${i}`).value,
+                score: parseFloat(document.getElementById(`score-mc-${i}`).value) || 0.25
             });
+        }
+
+        const tfData = [];
+        for (let i = 1; i <= numTf; i++) {
+            tfData.push({
+                a: document.getElementById(`ans-tf-${i}-a`).value,
+                b: document.getElementById(`ans-tf-${i}-b`).value,
+                c: document.getElementById(`ans-tf-${i}-c`).value,
+                d: document.getElementById(`ans-tf-${i}-d`).value
+            });
+        }
+
+        const examData = {
+            id: examId,
+            title: document.getElementById('exam-title').value.trim(),
+            time: parseInt(document.getElementById('exam-time').value) || 45,
+            pdf: pdfUrl,
+            mc: mcData,
+            tf: tfData,
+            tfScores: {
+                1: parseFloat(document.getElementById('score-tf-1').value) || 0.1,
+                2: parseFloat(document.getElementById('score-tf-2').value) || 0.25,
+                3: parseFloat(document.getElementById('score-tf-3').value) || 0.5,
+                4: parseFloat(document.getElementById('score-tf-4').value) || 1.0
+            }
         };
 
-        reader.readAsDataURL(file);
+        db.ref(`EXAMS/${examId}`).set(examData, (err) => {
+            if (err) {
+                alert("Lỗi lưu dữ liệu: " + err.message);
+            } else {
+                alert("ĐÃ LƯU ĐÁP ÁN ĐỀ THI LÊN ĐÁM MÂY THÀNH CÔNG!");
+                showTeacherTab('manage');
+            }
+        });
     }
 
     function loadExamManagementTable() {
@@ -429,7 +401,7 @@
     }
 
     function deleteExam(id) {
-        if (confirm(`Bạn có chắc muốn xóa đề thi mã [${id}] trên Đám Mây?`)) {
+        if (confirm(`Bạn có chắc muốn xóa mã đề [${id}] khỏi Đám Mây?`)) {
             db.ref(`EXAMS/${id}`).remove();
         }
     }
@@ -448,9 +420,7 @@
     }
 
     function loadStudentResults() {
-        const selectElem = document.getElementById('filter-exam-id');
-        if (!selectElem) return;
-        const examId = selectElem.value;
+        const examId = document.getElementById('filter-exam-id').value;
         const tbody = document.getElementById('results-list-table');
         if (!tbody) return;
         tbody.innerHTML = '';
@@ -461,7 +431,9 @@
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${index + 1}</td>
-                <td><b>${res.studentName}</b></td>
+                <td><b>${res.name}</b></td>
+                <td>${res.className || ''}</td>
+                <td>${res.dob || ''}</td>
                 <td>${res.examId}</td>
                 <td>${res.timestamp}</td>
                 <td><b style="color: #16a34a;">${Number(res.score).toFixed(2)}</b></td>
@@ -472,14 +444,14 @@
 
     function exportToExcel() {
         const examId = document.getElementById('filter-exam-id').value;
-        if (!examId) { alert("Vui lòng chọn Mã đề thi để xuất báo cáo!"); return; }
+        if (!examId) { alert("Vui lòng chọn Mã đề thi!"); return; }
 
         const filtered = results.filter(r => r.examId === examId);
-        if (filtered.length === 0) { alert("Chưa có dữ liệu làm bài cho mã đề này!"); return; }
+        if (filtered.length === 0) { alert("Chưa có dữ liệu làm bài!"); return; }
 
-        let csvContent = "\uFEFFSTT,Họ và Tên,Mã Đề,Thời Gian Nộp Bài,Điểm Số\n";
+        let csvContent = "\uFEFFSTT,Họ và Tên,Lớp,Ngày Sinh,Mã Đề,Thời Gian Nộp,Điểm Số\n";
         filtered.forEach((r, idx) => {
-            csvContent += `${idx + 1},"${r.studentName}",${r.examId},"${r.timestamp}",${Number(r.score).toFixed(2)}\n`;
+            csvContent += `${idx + 1},"${r.name}","${r.className || ''}","${r.dob || ''}",${r.examId},"${r.timestamp}",${Number(r.score).toFixed(2)}\n`;
         });
 
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -494,7 +466,7 @@
     function loadStudentExamList() {
         const select = document.getElementById('student-exam-select');
         if (!select) return;
-        select.innerHTML = '<option value="">-- Chọn đề thi --</option>';
+        select.innerHTML = '<option value="">-- Chọn bài kiểm tra --</option>';
         
         Object.keys(exams).forEach(key => {
             const opt = document.createElement('option');
@@ -505,12 +477,17 @@
     }
 
     function startExam() {
-        currentStudentName = document.getElementById('student-name').value.trim();
+        const name = document.getElementById('student-name').value.trim();
+        const className = document.getElementById('student-class').value.trim();
+        const dob = document.getElementById('student-dob').value;
         const examId = document.getElementById('student-exam-select').value;
 
-        if (!currentStudentName) { alert("Vui lòng nhập họ tên!"); return; }
-        if (!examId) { alert("Vui lòng chọn bài kiểm tra!"); return; }
+        if (!name || !className || !dob || !examId) {
+            alert("Vui lòng nhập đầy đủ Họ tên, Lớp, Ngày sinh và Chọn bài kiểm tra!");
+            return;
+        }
 
+        currentStudent = { name, className, dob };
         currentExam = exams[examId];
 
         document.getElementById('pdf-frame').src = currentExam.pdf;
@@ -543,7 +520,7 @@
         }
 
         if (currentExam.tf && currentExam.tf.length > 0) {
-            html += '<h4>Phần II: Đúng / Sai</h4>';
+            html += '<h4 style="margin-top: 15px;">Phần II: Đúng / Sai</h4>';
             currentExam.tf.forEach((q, idx) => {
                 const i = idx + 1;
                 html += `
@@ -615,9 +592,10 @@
             });
         }
 
-        // Lưu kết quả bài thi trực tiếp lên Firebase
         const resultRecord = {
-            studentName: currentStudentName,
+            name: currentStudent.name,
+            className: currentStudent.className,
+            dob: currentStudent.dob,
             examId: currentExam.id,
             score: totalScore,
             timestamp: new Date().toLocaleString('vi-VN')

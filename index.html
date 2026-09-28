@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hệ Thống Thi & Kiểm Tra Trực Tuyến</title>
+    
+    <!-- Nhúng Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
     <style>
         :root {
             --primary-color: #0056b3;
@@ -58,17 +63,15 @@
             margin-bottom: 20px;
         }
 
-        /* Giao diện làm bài 2 cột - Tối ưu tỷ lệ cho Học sinh */
         .exam-container {
             display: flex;
             gap: 15px;
             height: calc(100vh - 90px);
         }
 
-        /* Khung chọn đáp án (Bên trái) - Thu nhỏ lại */
         .left-panel {
             flex: 1; 
-            max-width: 380px; /* Tiết kiệm diện tích */
+            max-width: 380px;
             background: white;
             padding: 15px;
             border-radius: 8px;
@@ -78,9 +81,8 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
-        /* Khung hiển thị Đề PDF (Bên phải) - Cho to hơn hẳn */
         .right-panel {
-            flex: 2.5; /* Mở rộng tối đa cho đề thi */
+            flex: 2.5;
             background: #fff;
             border-radius: 8px;
             overflow: hidden;
@@ -131,7 +133,6 @@
 
         th { background-color: var(--light-bg); }
 
-        /* Modal popup Xem Đề (Giáo viên) - Mở rộng tối đa */
         .modal {
             display: none;
             position: fixed;
@@ -154,7 +155,6 @@
             transition: all 0.3s ease;
         }
 
-        /* Chế độ Full Screen cho Modal */
         .modal-content.fullscreen {
             width: 100vw !important;
             height: 100vh !important;
@@ -208,7 +208,7 @@
     </header>
 
     <div class="container">
-        <!-- MÀN HÌNH TRANG CHỦ / CHỌN CHẾ ĐỘ -->
+        <!-- MÀN HÌNH TRANG CHỦ -->
         <div id="view-home" class="card" style="text-align: center;">
             <h3>Chào mừng bạn đến với hệ thống kiểm tra trực tuyến</h3>
             <p>Vui lòng chọn vai trò để tiếp tục:</p>
@@ -234,13 +234,13 @@
             <div class="form-group">
                 <label>Chọn Bài Kiểm Tra (*):</label>
                 <select id="student-exam-select">
-                    <option value="">-- Chọn đề thi --</option>
+                    <option value="">-- Đang tải dữ liệu đề thi... --</option>
                 </select>
             </div>
             <button class="btn btn-success" onclick="startExam()">BẮT ĐẦU LÀM BÀI</button>
         </div>
 
-        <!-- MÀN HÌNH LÀM BÀI CỦA HỌC SINH (TỐI ƯU DIỆN TÍCH XEM ĐỀ) -->
+        <!-- MÀN HÌNH LÀM BÀI HỌC SINH -->
         <div id="view-student-exam" class="hidden">
             <div class="exam-container">
                 <div class="left-panel">
@@ -255,7 +255,7 @@
             </div>
         </div>
 
-        <!-- MÀN HÌNH GIÁO VIÊN (ADMIN) -->
+        <!-- MÀN HÌNH GIÁO VIÊN -->
         <div id="view-teacher" class="hidden">
             <div class="card">
                 <h3>TẠO ĐỀ THI MỚI</h3>
@@ -289,7 +289,7 @@
 
                 <div id="config-area" style="margin-top: 15px;"></div>
                 
-                <button class="btn btn-success hidden" id="save-exam-btn" style="margin-top: 15px;" onclick="saveExam()">LƯU ĐỀ THI</button>
+                <button class="btn btn-success hidden" id="save-exam-btn" style="margin-top: 15px;" onclick="saveExam()">LƯU ĐỀ THI LÊN ĐÁM MÂY</button>
             </div>
 
             <div class="card">
@@ -332,7 +332,7 @@
         </div>
     </div>
 
-    <!-- MODAL XEM LẠI ĐỀ THI GIÁO VIÊN (RỘNG RÃI & CÓ NÚT MỞ RỘNG) -->
+    <!-- MODAL XEM LẠI ĐỀ THI GIÁO VIÊN -->
     <div id="modal-view-exam" class="modal">
         <div class="modal-content" id="modal-content-box">
             <div class="modal-header">
@@ -350,12 +350,49 @@
     </div>
 
     <script>
-        // Dữ liệu ứng dụng
-        let exams = JSON.parse(localStorage.getItem('EXAMS')) || {};
-        let results = JSON.parse(localStorage.getItem('RESULTS')) || [];
+        // ------------------------------------------------------------------
+        // CẤU HÌNH FIREBASE (Thay thông tin dự án Firebase của bạn tại đây)
+        // ------------------------------------------------------------------
+        const firebaseConfig = {
+            apiKey: "AIzaSyYourApiKeyHere",
+            authDomain: "your-app.firebaseapp.com",
+            databaseURL: "https://your-app-default-rtdb.firebaseio.com",
+            projectId: "your-app",
+            storageBucket: "your-app.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "1:1234567890:web:abcdef"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let exams = {};
+        let results = [];
         let currentExam = null;
         let timerInterval = null;
         let studentInfo = {};
+
+        // Lắng nghe dữ liệu Thời gian thực từ Firebase Đám Mây
+        db.ref('EXAMS').on('value', (snapshot) => {
+            exams = snapshot.val() || {};
+            renderExamList();
+            loadReportSelect();
+            updateStudentExamSelect();
+        });
+
+        db.ref('RESULTS').on('value', (snapshot) => {
+            const data = snapshot.val() || {};
+            results = Object.values(data);
+            loadStudentResults();
+        });
+
+        function updateStudentExamSelect() {
+            const select = document.getElementById('student-exam-select');
+            select.innerHTML = '<option value="">-- Chọn đề thi --</option>';
+            Object.keys(exams).forEach(id => {
+                select.innerHTML += `<option value="${id}">${exams[id].title} (${id})</option>`;
+            });
+        }
 
         function goHome() {
             clearInterval(timerInterval);
@@ -377,12 +414,7 @@
             document.getElementById('nav-buttons').innerHTML = `
                 <button class="btn btn-secondary" onclick="goHome()">TRANG CHỦ</button>
             `;
-
-            const select = document.getElementById('student-exam-select');
-            select.innerHTML = '<option value="">-- Chọn đề thi --</option>';
-            Object.keys(exams).forEach(id => {
-                select.innerHTML += `<option value="${id}">${exams[id].title} (${id})</option>`;
-            });
+            updateStudentExamSelect();
         }
 
         function startExam() {
@@ -472,17 +504,21 @@
             if (!force) {
                 let unanswered = [];
 
-                currentExam.mcConfig.forEach((q, idx) => {
-                    const selected = document.querySelector(`input[name="mc_${idx}"]:checked`);
-                    if (!selected) unanswered.push(`Câu ${idx + 1} (Phần I)`);
-                });
-
-                currentExam.tfConfig.forEach((q, idx) => {
-                    ['a', 'b', 'c', 'd'].forEach(sub => {
-                        const selected = document.querySelector(`input[name="tf_${idx}_${sub}"]:checked`);
-                        if (!selected) unanswered.push(`Câu ${idx + 1} ý ${sub} (Phần II)`);
+                if (currentExam.mcConfig) {
+                    currentExam.mcConfig.forEach((q, idx) => {
+                        const selected = document.querySelector(`input[name="mc_${idx}"]:checked`);
+                        if (!selected) unanswered.push(`Câu ${idx + 1} (Phần I)`);
                     });
-                });
+                }
+
+                if (currentExam.tfConfig) {
+                    currentExam.tfConfig.forEach((q, idx) => {
+                        ['a', 'b', 'c', 'd'].forEach(sub => {
+                            const selected = document.querySelector(`input[name="tf_${idx}_${sub}"]:checked`);
+                            if (!selected) unanswered.push(`Câu ${idx + 1} ý ${sub} (Phần II)`);
+                        });
+                    });
+                }
 
                 if (unanswered.length > 0) {
                     const confirmSubmit = confirm(`Bạn chưa trả lời các câu sau:\n- ${unanswered.join('\n- ')}\n\nBạn có chắc chắn muốn nộp bài không?`);
@@ -494,26 +530,30 @@
 
             let totalScore = 0;
 
-            currentExam.mcConfig.forEach((q, idx) => {
-                const selected = document.querySelector(`input[name="mc_${idx}"]:checked`);
-                if (selected && selected.value === q.ans) {
-                    totalScore += parseFloat(q.score);
-                }
-            });
-
-            currentExam.tfConfig.forEach((q, idx) => {
-                let correctCount = 0;
-                ['a', 'b', 'c', 'd'].forEach(sub => {
-                    const selected = document.querySelector(`input[name="tf_${idx}_${sub}"]:checked`);
-                    if (selected && selected.value === q.ans[sub]) {
-                        correctCount++;
+            if (currentExam.mcConfig) {
+                currentExam.mcConfig.forEach((q, idx) => {
+                    const selected = document.querySelector(`input[name="mc_${idx}"]:checked`);
+                    if (selected && selected.value === q.ans) {
+                        totalScore += parseFloat(q.score);
                     }
                 });
-                if (correctCount === 1) totalScore += parseFloat(q.scores.s1);
-                else if (correctCount === 2) totalScore += parseFloat(q.scores.s2);
-                else if (correctCount === 3) totalScore += parseFloat(q.scores.s3);
-                else if (correctCount === 4) totalScore += parseFloat(q.scores.s4);
-            });
+            }
+
+            if (currentExam.tfConfig) {
+                currentExam.tfConfig.forEach((q, idx) => {
+                    let correctCount = 0;
+                    ['a', 'b', 'c', 'd'].forEach(sub => {
+                        const selected = document.querySelector(`input[name="tf_${idx}_${sub}"]:checked`);
+                        if (selected && selected.value === q.ans[sub]) {
+                            correctCount++;
+                        }
+                    });
+                    if (correctCount === 1) totalScore += parseFloat(q.scores.s1);
+                    else if (correctCount === 2) totalScore += parseFloat(q.scores.s2);
+                    else if (correctCount === 3) totalScore += parseFloat(q.scores.s3);
+                    else if (correctCount === 4) totalScore += parseFloat(q.scores.s4);
+                });
+            }
 
             const resultRecord = {
                 name: studentInfo.name,
@@ -524,8 +564,8 @@
                 score: totalScore.toFixed(2)
             };
 
-            results.push(resultRecord);
-            localStorage.setItem('RESULTS', JSON.stringify(results));
+            // Lưu trực tiếp điểm số học sinh lên Đám Mây Firebase
+            db.ref('RESULTS').push(resultRecord);
 
             alert(`Bạn đã nộp bài thành công!\nĐiểm số của bạn: ${totalScore.toFixed(2)} điểm.`);
             goHome();
@@ -637,11 +677,17 @@
                     });
                 }
 
-                exams[id] = { id, title, duration, pdfData, mcConfig, tfConfig };
-                localStorage.setItem('EXAMS', JSON.stringify(exams));
+                const examObject = { id, title, duration, pdfData, mcConfig, tfConfig };
 
-                alert('Lưu đề thi thành công!');
-                location.reload();
+                // Lưu đề thi trực tiếp lên Firebase Realtime Database
+                db.ref(`EXAMS/${id}`).set(examObject, (error) => {
+                    if (error) {
+                        alert("Lỗi khi lưu lên Đám Mây: " + error.message);
+                    } else {
+                        alert('Lưu đề thi lên Đám Mây thành công!');
+                        location.reload();
+                    }
+                });
             };
 
             reader.readAsDataURL(pdfFile);
@@ -668,11 +714,8 @@
         }
 
         function deleteExam(id) {
-            if (confirm(`Bạn có chắc chắn muốn xóa đề thi mã ${id}?`)) {
-                delete exams[id];
-                localStorage.setItem('EXAMS', JSON.stringify(exams));
-                renderExamList();
-                loadReportSelect();
+            if (confirm(`Bạn có chắc chắn muốn xóa đề thi mã ${id} trên Đám Mây?`)) {
+                db.ref(`EXAMS/${id}`).remove();
             }
         }
 
@@ -700,7 +743,6 @@
             document.getElementById('modal-view-exam').style.display = 'flex';
         }
 
-        /* Tính năng phóng to/thu nhỏ khung xem đề */
         function toggleModalFullscreen() {
             const modalContent = document.getElementById('modal-content-box');
             const btn = document.getElementById('btn-toggle-fs');

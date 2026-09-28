@@ -20,6 +20,7 @@
         .btn-danger { background: #dc2626; color: #fff; }
         .btn-warning { background: #d97706; color: #fff; }
         .btn:hover { opacity: 0.9; }
+        .btn:disabled { background: #9ca3af; cursor: not-allowed; }
         
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e5e7eb; padding-bottom: 15px; margin-bottom: 20px; }
         .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
@@ -74,26 +75,26 @@
         <!-- Tab 1: Tạo Đề -->
         <div id="tab-create">
             <h3>Cấu Hình Đề Thi & Đáp Án Mới</h3>
-            <form onsubmit="saveExam(event)">
+            <form id="create-exam-form">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
                     <div class="form-group">
                         <label>Mã bài thi (Viết liền không dấu):</label>
-                        <input type="text" id="exam-id" required placeholder="VD: DE01">
+                        <input type="text" id="exam-id" placeholder="VD: DE01">
                     </div>
                     <div class="form-group">
                         <label>Tên bài thi:</label>
-                        <input type="text" id="exam-title" required placeholder="VD: Kiểm tra Giữa Kỳ 1 Tin Học">
+                        <input type="text" id="exam-title" placeholder="VD: Kiểm tra Giữa Kỳ 1 Tin Học">
                     </div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px;">
                     <div class="form-group">
                         <label>Đường dẫn File PDF Đề thi (URL hoặc tên file):</label>
-                        <input type="text" id="exam-pdf-url" required placeholder="VD: de-thi/de01.pdf hoặc https://...">
+                        <input type="text" id="exam-pdf-url" placeholder="VD: de-thi/de01.pdf hoặc https://...">
                     </div>
                     <div class="form-group">
                         <label>Thời gian làm bài (Phút):</label>
-                        <input type="number" id="exam-time" value="45" required min="1">
+                        <input type="number" id="exam-time" value="45" min="1">
                     </div>
                 </div>
 
@@ -118,9 +119,11 @@
                     </div>
                 </div>
 
+                <button type="button" class="btn btn-primary" onclick="generateAnswerSetup()" style="margin-bottom: 15px;">Tạo/Tải lại danh sách ô Đáp án</button>
+                
                 <div id="answer-setup-container"></div>
 
-                <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 20px; padding: 12px; font-size: 16px;">LƯU ĐÁP ÁN LÊN ĐÁM MÂY</button>
+                <button type="button" id="btn-save-exam" class="btn btn-success" style="width: 100%; margin-top: 20px; padding: 12px; font-size: 16px;" onclick="saveExam()">LƯU ĐÁP ÁN LÊN ĐÁM MÂY</button>
             </form>
         </div>
 
@@ -174,15 +177,15 @@
             <h3 style="margin-bottom: 20px; text-align: center; color: #1e293b;">Thông Tin Học Sinh Làm Bài</h3>
             <div class="form-group">
                 <label>Họ và Tên Học Sinh:</label>
-                <input type="text" id="student-name" placeholder="Ví dụ: Nguyễn Văn An" required>
+                <input type="text" id="student-name" placeholder="Ví dụ: Nguyễn Văn An">
             </div>
             <div class="form-group">
                 <label>Lớp:</label>
-                <input type="text" id="student-class" placeholder="Ví dụ: 12A1" required>
+                <input type="text" id="student-class" placeholder="Ví dụ: 12A1">
             </div>
             <div class="form-group">
                 <label>Ngày Sinh:</label>
-                <input type="date" id="student-dob" required>
+                <input type="date" id="student-dob">
             </div>
             <div class="form-group">
                 <label>Chọn Bài Kiểm Tra:</label>
@@ -212,7 +215,7 @@
 </div>
 
 <script>
-    // Firebase Config của bạn
+    // Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyA_wlm4Y5sf7kYUKsBjz0WZZae9tdYRyhU",
       authDomain: "hethongthionline-b8102.firebaseapp.com",
@@ -232,7 +235,6 @@
     let timerInterval = null;
     let currentStudent = {};
 
-    // Tải dữ liệu Đám Mây tự động
     db.ref('EXAMS').on('value', (snapshot) => {
         exams = snapshot.val() || {};
         loadStudentExamList();
@@ -328,35 +330,46 @@
         container.innerHTML = html;
     }
 
-    function saveExam(e) {
-        e.preventDefault();
+    function saveExam() {
         const examId = document.getElementById('exam-id').value.trim();
+        const examTitle = document.getElementById('exam-title').value.trim();
         const pdfUrl = document.getElementById('exam-pdf-url').value.trim();
+
+        // Kiểm tra từng trường thông tin, nếu thiếu sẽ báo lỗi ngay
+        if (!examId) { alert("LỖI: Bạn chưa nhập 'Mã bài thi'!"); return; }
+        if (!examTitle) { alert("LỖI: Bạn chưa nhập 'Tên bài thi'!"); return; }
+        if (!pdfUrl) { alert("LỖI: Bạn chưa nhập 'Đường dẫn File PDF Đề thi'!"); return; }
+
+        const btnSave = document.getElementById('btn-save-exam');
+        btnSave.disabled = true;
+        btnSave.textContent = "ĐANG TẢI DỮ LIỆU LÊN ĐÁM MÂY...";
 
         const numMc = parseInt(document.getElementById('num-mc').value) || 0;
         const numTf = parseInt(document.getElementById('num-tf').value) || 0;
 
         const mcData = [];
         for (let i = 1; i <= numMc; i++) {
+            const elAns = document.getElementById(`ans-mc-${i}`);
+            const elScore = document.getElementById(`score-mc-${i}`);
             mcData.push({
-                ans: document.getElementById(`ans-mc-${i}`).value,
-                score: parseFloat(document.getElementById(`score-mc-${i}`).value) || 0.25
+                ans: elAns ? elAns.value : 'A',
+                score: elScore ? (parseFloat(elScore.value) || 0.25) : 0.25
             });
         }
 
         const tfData = [];
         for (let i = 1; i <= numTf; i++) {
             tfData.push({
-                a: document.getElementById(`ans-tf-${i}-a`).value,
-                b: document.getElementById(`ans-tf-${i}-b`).value,
-                c: document.getElementById(`ans-tf-${i}-c`).value,
-                d: document.getElementById(`ans-tf-${i}-d`).value
+                a: document.getElementById(`ans-tf-${i}-a`) ? document.getElementById(`ans-tf-${i}-a`).value : 'Đ',
+                b: document.getElementById(`ans-tf-${i}-b`) ? document.getElementById(`ans-tf-${i}-b`).value : 'Đ',
+                c: document.getElementById(`ans-tf-${i}-c`) ? document.getElementById(`ans-tf-${i}-c`).value : 'S',
+                d: document.getElementById(`ans-tf-${i}-d`) ? document.getElementById(`ans-tf-${i}-d`).value : 'S'
             });
         }
 
         const examData = {
             id: examId,
-            title: document.getElementById('exam-title').value.trim(),
+            title: examTitle,
             time: parseInt(document.getElementById('exam-time').value) || 45,
             pdf: pdfUrl,
             mc: mcData,
@@ -370,10 +383,15 @@
         };
 
         db.ref(`EXAMS/${examId}`).set(examData, (err) => {
+            btnSave.disabled = false;
+            btnSave.textContent = "LƯU ĐÁP ÁN LÊN ĐÁM MÂY";
+
             if (err) {
-                alert("Lỗi lưu dữ liệu: " + err.message);
+                alert("Lỗi kết nối Firebase: " + err.message);
             } else {
                 alert("ĐÃ LƯU ĐÁP ÁN ĐỀ THI LÊN ĐÁM MÂY THÀNH CÔNG!");
+                document.getElementById('create-exam-form').reset();
+                generateAnswerSetup();
                 showTeacherTab('manage');
             }
         });

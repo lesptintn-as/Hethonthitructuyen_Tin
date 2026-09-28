@@ -20,6 +20,7 @@
         .btn-danger { background: #dc2626; color: #fff; }
         .btn-warning { background: #d97706; color: #fff; }
         .btn:hover { opacity: 0.9; }
+        .btn:disabled { background: #9ca3af; cursor: not-allowed; }
         
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e5e7eb; padding-bottom: 15px; margin-bottom: 20px; }
         .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
@@ -122,7 +123,7 @@
                 <button type="button" class="btn btn-primary" onclick="generateAnswerSetup()" style="margin-bottom: 15px;">Thiết lập Đáp án & Điểm</button>
                 <div id="answer-setup-container"></div>
 
-                <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 20px; padding: 12px;">LƯU ĐỀ THI LÊN ĐÁM MÂY</button>
+                <button type="submit" id="btn-save-exam" class="btn btn-success" style="width: 100%; margin-top: 20px; padding: 12px;">LƯU ĐỀ THI LÊN ĐÁM MÂY</button>
             </form>
         </div>
 
@@ -205,7 +206,7 @@
 
 <script>
     // ------------------------------------------------------------------
-    // CẤU HÌNH FIREBASE ĐÁM MÂY CỦA BẠN
+    // CẤU HÌNH FIREBASE ĐÁM MÂY
     // ------------------------------------------------------------------
     const firebaseConfig = {
       apiKey: "AIzaSyA_wlm4Y5sf7kYUKsBjz0WZZae9tdYRyhU",
@@ -331,60 +332,74 @@
 
     function saveExam(e) {
         e.preventDefault();
+
+        const examId = document.getElementById('exam-id').value.trim();
+        const examTitle = document.getElementById('exam-title').value.trim();
         const fileInput = document.getElementById('exam-pdf');
         const file = fileInput.files[0];
 
-        if (!file) { alert("Vui lòng chọn file PDF!"); return; }
+        if (!examId) { alert("Vui lòng nhập Mã bài thi!"); return; }
+        if (!examTitle) { alert("Vui lòng nhập Tên bài thi!"); return; }
+        if (!file) { alert("Vui lòng chọn file PDF đề thi!"); return; }
+
+        const btnSave = document.getElementById('btn-save-exam');
+        btnSave.disabled = true;
+        btnSave.textContent = "ĐANG TẢI ĐỀ LÊN ĐÁM MÂY...";
 
         const reader = new FileReader();
         reader.onload = function(evt) {
             const pdfBase64 = evt.target.result;
-            const examId = document.getElementById('exam-id').value.trim();
 
             const numMc = parseInt(document.getElementById('num-mc').value) || 0;
             const numTf = parseInt(document.getElementById('num-tf').value) || 0;
 
             const mcData = [];
             for (let i = 1; i <= numMc; i++) {
+                const ansElem = document.getElementById(`ans-mc-${i}`);
+                const scoreElem = document.getElementById(`score-mc-${i}`);
                 mcData.push({
-                    ans: document.getElementById(`ans-mc-${i}`).value,
-                    score: parseFloat(document.getElementById(`score-mc-${i}`).value) || 0
+                    ans: ansElem ? ansElem.value : 'A',
+                    score: scoreElem ? parseFloat(scoreElem.value) || 0 : 0.25
                 });
             }
 
             const tfData = [];
             for (let i = 1; i <= numTf; i++) {
                 tfData.push({
-                    a: document.getElementById(`ans-tf-${i}-a`).value,
-                    b: document.getElementById(`ans-tf-${i}-b`).value,
-                    c: document.getElementById(`ans-tf-${i}-c`).value,
-                    d: document.getElementById(`ans-tf-${i}-d`).value
+                    a: document.getElementById(`ans-tf-${i}-a`) ? document.getElementById(`ans-tf-${i}-a`).value : 'Đ',
+                    b: document.getElementById(`ans-tf-${i}-b`) ? document.getElementById(`ans-tf-${i}-b`).value : 'Đ',
+                    c: document.getElementById(`ans-tf-${i}-c`) ? document.getElementById(`ans-tf-${i}-c`).value : 'S',
+                    d: document.getElementById(`ans-tf-${i}-d`) ? document.getElementById(`ans-tf-${i}-d`).value : 'S'
                 });
             }
 
             const examData = {
                 id: examId,
-                title: document.getElementById('exam-title').value,
-                time: parseInt(document.getElementById('exam-time').value),
+                title: examTitle,
+                time: parseInt(document.getElementById('exam-time').value) || 45,
                 pdf: pdfBase64,
                 mc: mcData,
                 tf: tfData,
                 tfScores: {
-                    1: parseFloat(document.getElementById('score-tf-1').value),
-                    2: parseFloat(document.getElementById('score-tf-2').value),
-                    3: parseFloat(document.getElementById('score-tf-3').value),
-                    4: parseFloat(document.getElementById('score-tf-4').value)
+                    1: parseFloat(document.getElementById('score-tf-1').value) || 0.1,
+                    2: parseFloat(document.getElementById('score-tf-2').value) || 0.25,
+                    3: parseFloat(document.getElementById('score-tf-3').value) || 0.5,
+                    4: parseFloat(document.getElementById('score-tf-4').value) || 1.0
                 }
             };
 
             // Lưu trực tiếp lên Đám Mây Firebase
             db.ref(`EXAMS/${examId}`).set(examData, (err) => {
+                btnSave.disabled = false;
+                btnSave.textContent = "LƯU ĐỀ THI LÊN ĐÁM MÂY";
+
                 if (err) {
                     alert("Lỗi khi lưu lên Firebase: " + err.message);
                 } else {
-                    alert("Lưu đề thi thành công lên đám mây!");
+                    alert("LƯU ĐỀ THI THÀNH CÔNG LÊN ĐÁM MÂY!");
                     document.getElementById('create-exam-form').reset();
                     generateAnswerSetup();
+                    showTeacherTab('manage'); // Chuyển sang tab quản lý đề
                 }
             });
         };
